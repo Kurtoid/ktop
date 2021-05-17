@@ -30,6 +30,13 @@ fn main() {
                 .takes_value(true)
                 .help("refresh time in seconds"),
         )
+        .arg(
+            Arg::with_name("run once")
+                .short("o")
+                .short("once")
+                .takes_value(false)
+                .help("run once and exit"),
+        )
         .get_matches();
 
     // TODO: pass the config file location to confy
@@ -47,7 +54,8 @@ fn main() {
             }
         },
     };
-    let app_config = config::create_config_from_args(delay_time);
+    let run_once = matches.is_present("run once");
+    let app_config = config::create_config_from_args(delay_time, run_once);
     println!("Refresh time is {}", app_config.delay);
 
     let mut sys = System::new_all();
@@ -74,7 +82,7 @@ fn main() {
 
     let ten_millis =
         time::Duration::from_millis((app_config.delay * 1000).try_into().unwrap_or(5000));
-    while true {
+    loop {
         thread::sleep(ten_millis);
         // To refresh all system information:
         sys.refresh_all();
@@ -92,5 +100,8 @@ fn main() {
         for (pid, process) in hash_vec.iter().take(5) {
             println!("[{}] {} {:?}", pid, process.name(), process.cpu_usage());
         }
+        if app_config.run_once {
+            break;
+        };
     }
 }

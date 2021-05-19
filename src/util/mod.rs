@@ -135,13 +135,13 @@ impl<T> StatefulList<T> {
     }
 }
 
-pub struct StatefulTable<'a> {
+pub struct StatefulTable {
     pub state: TableState,
-    pub items: Vec<Vec<&'a str>>,
+    pub items: Vec<Vec<String>>,
 }
 
-impl<'a> StatefulTable<'a> {
-    pub fn new(items: Vec<Vec<&'a str>>) -> StatefulTable<'a> {
+impl<'a> StatefulTable {
+    pub fn new(items: Vec<Vec<String>>) -> StatefulTable{
         StatefulTable {
             state: TableState::default(),
             items
@@ -151,7 +151,8 @@ impl<'a> StatefulTable<'a> {
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
-                    0
+                    // 0
+                    i
                 } else {
                     i + 1
                 }
@@ -165,7 +166,8 @@ impl<'a> StatefulTable<'a> {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.items.len() - 1
+                    // self.items.len() - 1
+                    0
                 } else {
                     i - 1
                 }

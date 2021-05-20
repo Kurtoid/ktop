@@ -2,23 +2,43 @@ use clap::{App, Arg};
 const DEFAULT_DELAY: i32 = 5;
 mod config;
 use std::cmp::Ordering;
-use std::convert::TryInto;
-use std::{thread, time};
-use sysinfo::{ProcessExt, System, SystemExt};
+use std::collections::HashMap;
+use sysinfo::{ProcessExt, System, SystemExt, Process, Pid};
 mod util;
 
-use util::event::{Event, Events};
 use std::{error::Error, io};
-use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
+use termion::{event::Key, raw::IntoRawMode, screen::AlternateScreen};
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, Cell, Row, Table, TableState},
+    widgets::{Block, Borders, Cell, Row, Table},
     Terminal,
 };
-use util::{StatefulTable};
+use util::event::{Event, Events};
+use util::StatefulTable;
+
+fn get_process_vec(processes: &HashMap<Pid, Process>)->Vec<Vec<String>>{
+        // let mut hash_vec: Vec<_> = processes.iter().filter(|n| !n.1.cpu_usage().is_nan()).collect();
+        let mut hash_vec: Vec<_> = processes.iter().collect();
+        hash_vec.sort_by(|a, b| {
+            b.1.cpu_usage()
+                .partial_cmp(&a.1.cpu_usage())
+                .unwrap_or(Ordering::Equal)
+        });
+        let mut vec = Vec::new();
+        for (pid, process) in hash_vec.iter() {
+            // println!("[{}] {} {:?}", pid, process.name(), process.cpu_usage());
+            vec.push(vec![
+                pid.to_string(),
+                process.name().to_string(),
+                process.cpu_usage().to_string(),
+            ]);
+        }
+        vec
+
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("ktop")
@@ -67,7 +87,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let app_config = config::create_config_from_args(delay_time, run_once);
     println!("Refresh time is {}", app_config.delay);
 
-    let mut sys = System::new_all();
     // Terminal initialization
     let stdout = io::stdout().into_raw_mode()?;
     // let stdout = MouseTerminal::from(stdout);
@@ -78,23 +97,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let events = Events::new();
 
     let mut sys = System::new_all();
-    sys.refresh_all();
-    let processes = sys.get_processes();
-    // let mut hash_vec: Vec<_> = processes.iter().filter(|n| !n.1.cpu_usage().is_nan()).collect();
-    let mut hash_vec: Vec<_> = processes.iter().collect();
-    hash_vec.sort_by(|a, b| {
-        b.1.cpu_usage()
-            .partial_cmp(&a.1.cpu_usage())
-            .unwrap_or(Ordering::Equal)
-    });
-    let mut vec = Vec::new();
-    for (pid, process) in hash_vec.iter() {
-        // println!("[{}] {} {:?}", pid, process.name(), process.cpu_usage());
-        vec.push(vec![pid.to_string(), process.name().to_string(), process.cpu_usage().to_string()]);
-    }
-    let mut table = StatefulTable::new(vec);
+    let mut table = StatefulTable::new(vec![]);
     // Input
     loop {
+        sys.refresh_all();
+        let processes = sys.get_processes();
+        table.items = get_process_vec(processes);
         terminal.draw(|f| {
             let rects = Layout::default()
                 .constraints([Constraint::Percentage(100)].as_ref())

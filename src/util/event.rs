@@ -1,4 +1,3 @@
-// for now, until we prune this
 #[allow(dead_code)]
 use std::io;
 use std::sync::mpsc;

@@ -103,8 +103,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let events = Events::new();
-
     let mut sys = System::new_all();
     let config = Config {
         tick_rate: Duration::from_millis(app_config.delay * 1000),

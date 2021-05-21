@@ -1,5 +1,4 @@
 use clap::{App, Arg};
-const DEFAULT_DELAY: u64 = 5;
 mod config;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -42,18 +41,16 @@ fn get_process_vec(processes: &HashMap<Pid, Process>) -> Vec<Vec<String>> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let can_use_debugfs = match debug_permissions::can_read_debug() {
-        false => {
-            debug_permissions::set_debug_permissions();
-            debug_permissions::can_read_debug()
-        }
-        true => true,
-    };
-    println!("using debugfs: {}", can_use_debugfs);
     let matches = App::new("ktop")
         .version("0.1.0")
         .author("Kurt Wilson <kurt@kurtw.dev>")
         .about("A system monitor inspired by glances and htop")
+        .arg(
+            Arg::with_name("zswap")
+            .short("z")
+            .long("zswap")
+            .help("read and display zswap debug stats")
+        )
         .arg(
             Arg::with_name("config file")
                 .short("c")
@@ -80,21 +77,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     // TODO: pass the config file location to confy
     // let myfile = matches.value_of("file").unwrap_or("input.txt");
     // println!("The file passed is: {}", myfile);
-
-    let delay_str = matches.value_of("refresh time");
-    let delay_time = match delay_str {
-        None => DEFAULT_DELAY,
-        Some(s) => match s.parse::<u64>() {
-            Ok(n) => n,
-            Err(_) => {
-                println!("Invalid value passed to refresh time: {}", s);
-                DEFAULT_DELAY
-            }
-        },
-    };
-    let run_once = matches.is_present("run once");
-    let app_config = config::create_config_from_args(delay_time, run_once);
+    let app_config = config::create_config_from_matches(matches);
     println!("Refresh time is {}", app_config.delay);
+
+    // take care of the permissions first
+    let can_use_debugfs = app_config.can_use_debugfs && match debug_permissions::can_read_debug() {
+        false => {
+            debug_permissions::set_debug_permissions();
+            debug_permissions::can_read_debug()
+        }
+        true => true,
+    };
+    println!("using debugfs: {}", can_use_debugfs);
 
     // Terminal initialization
     let stdout = io::stdout().into_raw_mode()?;

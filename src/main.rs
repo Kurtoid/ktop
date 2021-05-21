@@ -104,7 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         terminal.draw(|f| {
             let rects = Layout::default()
                 .constraints([Constraint::Percentage(100)].as_ref())
-                .margin(2)
+                .margin(0)
                 .split(f.size());
 
             let selected_style = Style::default().add_modifier(Modifier::REVERSED);

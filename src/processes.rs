@@ -1,5 +1,5 @@
 
-use std::cmp::Ordering;
+use std::{cmp::Ordering, net::ToSocketAddrs};
 use std::collections::HashMap;
 use sysinfo::{Pid, Process, ProcessExt};
 
@@ -20,9 +20,36 @@ pub fn get_process_vec(processes: &HashMap<Pid, Process>, app_state: &AppState) 
         // println!("[{}] {} {:?}", pid, process.name(), process.cpu_usage());
         vec.push(vec![
             pid.to_string(),
-            process.name().to_string(),
-            process.cpu_usage().to_string(),
+            pretty_cmd(process),
+            format!("{:.2}",process.cpu_usage()).to_string(),
         ]);
     }
     vec
+}
+
+fn pretty_cmd(process: &Process) -> String {
+    // TODO: cleanup
+    // TODO: configuable hide/show path
+    let cmd = process.cmd();
+    if cmd.len() <= 0 {
+        // kernel thread or something
+        return format!("{}{}{}", "[", process.name(), "]").to_string();
+    }
+    // how is it even possible that we have to split these twice???
+    let first_frag = cmd[0].splitn(1, " ").next().unwrap_or("unknown").split(" ").next();
+
+    // check if exec_name != proc_name - if so, append proc_name to string
+    let file_name = process.exe().file_name();
+    if file_name.is_none(){
+        // dont worry about it
+        // TODO: move/reorganize this
+        return first_frag.unwrap_or("unknown").to_string();
+    }
+    let file_name = file_name.unwrap().to_string_lossy();
+    if !file_name.eq(process.name()){
+        return format!("{}|{}|", first_frag.unwrap_or("unknown"), process.name());
+    }
+    else{
+        return first_frag.unwrap_or("unknown").to_string();
+    }
 }

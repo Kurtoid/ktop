@@ -1,30 +1,18 @@
 
 use std::{cmp::Ordering, net::ToSocketAddrs};
 use std::collections::HashMap;
-use sysinfo::{Pid, Process, ProcessExt};
-
+use psutil::process::{Process, ProcessError, processes};
 use crate::AppState;
 
-pub fn get_process_vec(processes: &HashMap<Pid, Process>, app_state: &AppState) -> Vec<Vec<String>> {
+pub fn get_process_vec(processes: &Vec<Result<Process, ProcessError>>, app_state: &AppState) -> Vec<Vec<String>> {
     // let mut hash_vec: Vec<_> = processes.iter().filter(|n| !n.1.cpu_usage().is_nan()).collect();
-    let mut hash_vec: Vec<_> = processes.iter().collect();
     if app_state.should_sort{
-        hash_vec.sort_by(|a, b| {
-            b.1.cpu_usage()
-                .partial_cmp(&a.1.cpu_usage())
+        processes.sort_by(|a,b| {
+            b.unwrap().cpu_percent()                .partial_cmp(&a.unwrap().cpu_percent())
                 .unwrap_or(Ordering::Equal)
-        });
+
+        })
     }
-    let mut vec = Vec::new();
-    for (pid, process) in hash_vec.iter() {
-        // println!("[{}] {} {:?}", pid, process.name(), process.cpu_usage());
-        vec.push(vec![
-            pid.to_string(),
-            pretty_cmd(process),
-            format!("{:.2}",process.cpu_usage()).to_string(),
-        ]);
-    }
-    vec
 }
 
 fn pretty_cmd(process: &Process) -> String {

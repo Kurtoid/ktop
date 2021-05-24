@@ -1,6 +1,5 @@
 use clap::{App, Arg};
 mod config;
-use sysinfo::{System, SystemExt};
 mod util;
 mod processes;
 
@@ -17,6 +16,7 @@ use tui::{
 };
 use util::event::{Config, Event, Events};
 use util::StatefulTable;
+use psutil::process::processes;
 
 use crate::debug_permissions::DebugfsStatus;
 mod debug_permissions;
@@ -89,15 +89,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut sys = System::new_all();
-    sys.refresh_all();
     let config = Config {
         tick_rate: Duration::from_millis(app_config.delay * 1000),
         ..Default::default()
     };
     let events = Events::with_config(config);
     let mut table = StatefulTable::new(vec![]);
-    let processes = sys.get_processes();
+    let processes = processes().unwrap();
     table.items = processes::get_process_vec(processes, &app_state);
     // Input
     loop {

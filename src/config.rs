@@ -20,6 +20,6 @@ pub fn create_config_from_matches(matches: ArgMatches)-> AppConfig{
         },
     };
     let run_once = matches.is_present("run once");
-    let can_use_debugfs = matches.is_present("zswap") || cfg!(debug_assertions); // always use zswap when debugging
+    let can_use_debugfs = matches.is_present("zswap") ;//|| cfg!(debug_assertions); // always use zswap when debugging
     AppConfig { delay: delay_time, run_once, can_use_debugfs }
 }

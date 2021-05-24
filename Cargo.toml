@@ -3,6 +3,7 @@ name = "ktop"
 version = "0.1.0"
 authors = ["Kurt Wilson <kurt4wilson@gmail.com>"]
 edition = "2018"
+default-features = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [profile.release]

@@ -1,25 +1,30 @@
 
+use std::collections::btree_map::ValuesMut;
 use std::{cmp::Ordering, net::ToSocketAddrs};
-use std::collections::HashMap;
-use psutil::process::{Process, ProcessError, processes};
+use std::collections::{BTreeMap, HashMap};
+use psutil::process::{self, Process, ProcessError, processes};
 use crate::AppState;
 
-pub fn get_process_vec(processes: Result<Vec<Result<Process, ProcessError>>, psutil::Error>, app_state: &AppState) -> Vec<Vec<String>> {
-    // let mut hash_vec: Vec<_> = processes.iter().filter(|n| !n.1.cpu_usage().is_nan()).collect();
-    // unpack then unwrap
-
-    // if we use unwrap_or on the next block, we don't need this, right?
-    if !processes.is_ok(){
-        return vec![];
+struct CachedProcess<'a>{
+    process: &'a psutil::process::Process,
+    cpu_percent: f32
+}
+pub fn get_process_vec(processes: ValuesMut<u32, Process>, app_state: &AppState) -> Vec<Vec<String>> {
+    let mut cached_processes = Vec::new();
+    for process_entry in processes{
+        let cpu_usage = process_entry.cpu_percent().unwrap_or(0.0);
+        cached_processes.push(CachedProcess{process: process_entry, cpu_percent: cpu_usage});
     }
+    if app_state.should_sort{
+        cached_processes.sort_by(|a, b| {
+            b.cpu_percent.partial_cmp(&a.cpu_percent).unwrap_or(Ordering::Equal)
+        });
+    }
+
     let mut process_list = Vec::new();
-    let processes = processes.unwrap_or(vec![]);
-    for process in processes{
-        if !process.is_ok(){
-            continue;
-        }
-        let mut process = process.unwrap();
-        let cpu_usage =  process.cpu_percent().unwrap_or(0.0);
+    for process_entry in cached_processes.iter(){
+        let mut process = process_entry.process;
+        let cpu_usage = process_entry.cpu_percent ;
         let name = process.name().unwrap_or_else(|_error| -> String {"Unknown".to_string()});
         let pid = process.pid();
         process_list.push(vec![pid.to_string(), name, cpu_usage.to_string()]);

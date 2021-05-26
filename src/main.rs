@@ -95,8 +95,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let events = Events::with_config(config);
     let mut table = StatefulTable::new(vec![]);
-    let running_processes = process::processes();
-    table.items = processes::get_process_vec(running_processes, &app_state);
+    let mut process_collector = process::ProcessCollector::new().unwrap();
+    process_collector.update();
+    table.items = processes::get_process_vec(process_collector.processes.values_mut(), &app_state);
     // Input
     loop {
         terminal.draw(|f| {
@@ -155,9 +156,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             },
             Event::Tick => {
                 // only refresh what we use
-                let running_processes = process::processes();
-                    
-                table.items = processes::get_process_vec(running_processes, &app_state);
+                process_collector.update();
+                table.items = processes::get_process_vec(process_collector.processes.values_mut(), &app_state);
             }
         }
     }

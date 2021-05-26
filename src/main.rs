@@ -16,7 +16,7 @@ use tui::{
 };
 use util::event::{Config, Event, Events};
 use util::StatefulTable;
-use psutil::process::processes;
+use psutil::process;
 
 use crate::debug_permissions::DebugfsStatus;
 mod debug_permissions;
@@ -95,8 +95,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let events = Events::with_config(config);
     let mut table = StatefulTable::new(vec![]);
-    let processes = processes().unwrap();
-    table.items = processes::get_process_vec(processes, &app_state);
+    let running_processes = process::processes();
+    table.items = processes::get_process_vec(running_processes, &app_state);
     // Input
     loop {
         terminal.draw(|f| {
@@ -155,9 +155,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             },
             Event::Tick => {
                 // only refresh what we use
-                sys.refresh_all();
-                let processes = sys.get_processes();
-                table.items = processes::get_process_vec(processes, &app_state);
+                let running_processes = process::processes();
+                    
+                table.items = processes::get_process_vec(running_processes, &app_state);
             }
         }
     }

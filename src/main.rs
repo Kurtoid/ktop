@@ -90,15 +90,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     let mut sys = System::new_all();
-    sys.refresh_all();
+    // sys.refresh_all();
     let config = Config {
         tick_rate: Duration::from_millis(app_config.delay * 1000),
         ..Default::default()
     };
     let events = Events::with_config(config);
     let mut table = StatefulTable::new(vec![]);
-    let processes = sys.get_processes();
-    table.items = processes::get_process_vec(processes, &app_state);
     // Input
     loop {
         terminal.draw(|f| {

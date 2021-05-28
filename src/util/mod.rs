@@ -4,6 +4,7 @@ pub mod event;
 
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
+use tui::text::Spans;
 use tui::widgets::ListState;
 use tui::{
     widgets::{TableState},
@@ -134,13 +135,13 @@ impl<T> StatefulList<T> {
     }
 }
 
-pub struct StatefulTable {
+pub struct StatefulTable<'a> {
     pub state: TableState,
-    pub items: Vec<Vec<String>>,
+    pub items: Vec<Vec<Spans<'a>>>,
 }
 
-impl<'a> StatefulTable {
-    pub fn new(items: Vec<Vec<String>>) -> StatefulTable{
+impl StatefulTable<'_> {
+    pub fn new(items: Vec<Vec<Spans>>) -> StatefulTable{
         StatefulTable {
             state: TableState::default(),
             items

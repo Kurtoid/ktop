@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     let mut sys = System::new_all();
-    // sys.refresh_all();
+    sys.refresh_all();
     let config = Config {
         tick_rate: Duration::from_millis(app_config.delay * 1000),
         ..Default::default()
@@ -115,18 +115,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .height(1)
                 .bottom_margin(0);
             let rows = table.items.iter().map(|item| {
-                let height = item
-                    .iter()
-                    .map(|content| content.chars().filter(|c| *c == '\n').count())
-                    .max()
-                    .unwrap_or(0)
-                    + 1;
-                let cells = item.iter().map(|c| Cell::from(Span::raw(c)));
-                Row::new(cells).height(height as u16).bottom_margin(0)
+                let cells = item.iter().map(|this_span| Cell::from(this_span.clone()));
+                Row::new(cells).height(1).bottom_margin(0)
             });
             let t = Table::new(rows)
                 .header(header)
-                .block(Block::default().borders(Borders::ALL).title("Table"))
+                .block(Block::default().borders(Borders::ALL).title("Processes"))
                 .highlight_style(selected_style)
                 .highlight_symbol(">> ")
                 .widths(&[
@@ -155,7 +149,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             },
             Event::Tick => {
                 // only refresh what we use
-                sys.refresh_all();
+                // sys.refresh_all();
+                sys.refresh_cpu();
+                sys.refresh_processes();
                 let processes = sys.get_processes();
                 table.items = processes::get_process_vec(processes, &app_state);
             }

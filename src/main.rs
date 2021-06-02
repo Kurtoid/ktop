@@ -4,6 +4,7 @@ use sysinfo::{System, SystemExt};
 mod util;
 mod processes;
 
+use std::borrow::BorrowMut;
 use std::{time::Duration, vec};
 use std::{error::Error, io};
 use termion::{event::Key, raw::IntoRawMode, screen::AlternateScreen};
@@ -90,6 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     let mut sys = System::new_all();
+    let mut processes;
     sys.refresh_all();
     let config = Config {
         tick_rate: Duration::from_millis(app_config.delay * 1000),
@@ -152,8 +154,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // sys.refresh_all();
                 sys.refresh_cpu();
                 sys.refresh_processes();
-                let processes = sys.get_processes();
-                table.items = processes::get_process_vec(processes, &app_state);
+                processes = sys.get_processes().values();
+                table.items = processes::get_process_vec(&processes, &app_state);
             }
         }
     }

@@ -138,6 +138,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Key::Char('q') => {
                     break;
                 }
+                Key::Esc =>{
+                    table.deselect();
+                }
                 Key::Down => {
                     table.next();
                 }

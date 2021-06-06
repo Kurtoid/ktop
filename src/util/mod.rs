@@ -147,6 +147,11 @@ impl StatefulTable<'_> {
             items
         }
     }
+
+    pub fn deselect(&mut self){
+        self.state.select(None);
+    }
+
     pub fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {

@@ -6,7 +6,7 @@ use sysinfo::{Pid, Process, ProcessExt};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans};
 use crate::AppState;
-pub fn get_process_vec<'a>(processes: & HashMap<i32, Process>, app_state: &AppState) ->  Vec<Vec<Spans<'a>>> {
+pub fn get_process_vec<'a>(processes: &HashMap<i32, Process>, app_state: &AppState) ->  Vec<Vec<Spans<'a>>> {
     // let mut hash_vec: Vec<_> = processes.iter().filter(|n| !n.1.cpu_usage().is_nan()).collect();
     let mut proc_vec: Vec<_> = processes.iter().collect();
     if app_state.should_sort{
@@ -34,7 +34,7 @@ fn pretty_cmd<'a>(name: &str, exe: &Path, cmd: &[String]) -> Span<'a> {
     // TODO: configuable hide/show path
     if cmd.len() <= 0 {
         // kernel thread or something
-        return Span::styled(format!("{}{}{}", "[", name, "]").to_owned(), green);
+        return Span::styled(format!("{}{}{}", "[", name, "]"),green);
     }
     // how is it even possible that we have to split these twice???
     let first_frag = cmd[0].splitn(1, " ").next().unwrap_or("unknown").split(" ").next();
@@ -44,13 +44,13 @@ fn pretty_cmd<'a>(name: &str, exe: &Path, cmd: &[String]) -> Span<'a> {
     if file_name.is_none(){
         // dont worry about it
         // TODO: move/reorganize this
-        return Span::styled(first_frag.unwrap_or("unknown").to_owned(), green);
+        return Span::styled(first_frag.unwrap_or("unknown").to_string(), green);
     }
     let file_name = file_name.unwrap().to_string_lossy();
     if !file_name.eq(name){
-        return Span::styled(format!("{}|{}|", first_frag.unwrap_or("unknown"), name).to_owned(), green);
+        return Span::styled(format!("{}|{}|", first_frag.unwrap_or("unknown"), name).to_string(), green);
     }
     else{
-        return Span::styled(first_frag.unwrap_or("unknown").to_owned(), green);
+        return Span::styled(first_frag.unwrap_or("unknown").to_string(), green);
     }
 }

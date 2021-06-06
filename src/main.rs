@@ -154,8 +154,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // sys.refresh_all();
                 sys.refresh_cpu();
                 sys.refresh_processes();
-                processes = sys.get_processes().values();
-                table.items = processes::get_process_vec(&processes, &app_state);
+                processes = sys.get_processes();
+                table.items = processes::get_process_vec(processes, &app_state);
             }
         }
     }

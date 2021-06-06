@@ -1,18 +1,16 @@
 use clap::{App, Arg};
 mod config;
 use sysinfo::{System, SystemExt};
-mod util;
 mod processes;
+mod util;
 
-use std::borrow::BorrowMut;
-use std::{time::Duration, vec};
 use std::{error::Error, io};
+use std::{time::Duration, vec};
 use termion::{event::Key, raw::IntoRawMode, screen::AlternateScreen};
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    text::Span,
     widgets::{Block, Borders, Cell, Row, Table},
     Terminal,
 };
@@ -22,7 +20,7 @@ use util::StatefulTable;
 use crate::debug_permissions::DebugfsStatus;
 mod debug_permissions;
 
-pub struct AppState{
+pub struct AppState {
     should_sort: bool,
     can_use_debugfs: bool,
     headers: Vec<ColumnType>,
@@ -85,10 +83,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         && match debug_permissions::can_read_debug() {
             DebugfsStatus::NoPermissions => {
                 debug_permissions::set_debug_permissions();
-                match debug_permissions::can_read_debug(){
-                    DebugfsStatus::MountedAndReadable=> true,
-                    _ => false
-                }
+                matches!(
+                    debug_permissions::can_read_debug(),
+                    DebugfsStatus::MountedAndReadable
+                )
             }
             DebugfsStatus::MountedAndReadable => true,
             DebugfsStatus::NotMounted => {
@@ -96,7 +94,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 false
             }
         };
-    let mut app_state = AppState{should_sort: true, can_use_debugfs, headers: vec![ColumnType::PID, ColumnType::NAME, ColumnType::CPU] };
+    let mut app_state = AppState {
+        should_sort: true,
+        can_use_debugfs,
+        headers: vec![ColumnType::PID, ColumnType::NAME, ColumnType::CPU],
+    };
 
     // Terminal initialization
     let stdout = io::stdout().into_raw_mode()?;
@@ -124,7 +126,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let selected_style = Style::default().add_modifier(Modifier::REVERSED);
             let normal_style = Style::default().bg(Color::Blue);
-            let header_cells = app_state.headers
+            let header_cells = app_state
+                .headers
                 .iter()
                 .map(|h| Cell::from(h.value()).style(Style::default().fg(Color::Red)));
             let header = Row::new(header_cells)
@@ -147,14 +150,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ]);
             f.render_stateful_widget(t, rects[0], &mut table.state);
         })?;
-        if app_config.run_once {break}; // TODO: don't clear screen
+        if app_config.run_once {
+            break;
+        }; // TODO: don't clear screen
         match events.next()? {
             Event::Input(input) => match input {
                 Key::Char('q') => {
                     break;
-                }
-                Key::Esc =>{
-                    table.deselect();
                 }
                 Key::Down => {
                     table.next();
@@ -162,8 +164,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Key::Up => {
                     table.previous();
                 }
-                Key::Esc =>{
-                    app_state.should_sort = false;
+                Key::Esc => {
+                    if app_state.should_sort {
+                        app_state.should_sort = false;
+                    } else {
+                        table.unselect();
+                    }
                 }
                 _ => {}
             },

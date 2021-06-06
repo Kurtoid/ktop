@@ -8,14 +8,14 @@ pub enum DebugfsStatus {
 
 // TODO: allow custom debugfs location
 pub fn can_read_debug() -> DebugfsStatus {
-    return match File::open("/sys/kernel/debug") {
+    match File::open("/sys/kernel/debug") {
         Err(e) => match e.kind() {
             ErrorKind::PermissionDenied => DebugfsStatus::NoPermissions,
             ErrorKind::NotFound => DebugfsStatus::NotMounted,
             _ => DebugfsStatus::NotMounted
         },
         Ok(_) => DebugfsStatus::MountedAndReadable,
-    };
+    }
 }
 
 // TODO: don't run a command like that (start a root-level process and use std::os::unix::fs::PermissionsExt ?)

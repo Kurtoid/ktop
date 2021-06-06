@@ -148,7 +148,7 @@ impl StatefulTable<'_> {
         }
     }
 
-    pub fn deselect(&mut self){
+    pub fn unselect(&mut self){
         self.state.select(None);
     }
 

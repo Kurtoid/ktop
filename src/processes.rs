@@ -1,9 +1,9 @@
 use crate::AppState;
 use std::collections::HashMap;
-use std::path::{self, Path};
-use std::{cmp::Ordering, net::ToSocketAddrs};
-use sysinfo::{Pid, Process, ProcessExt};
-use tui::style::{Color, Modifier, Style};
+use std::path::Path;
+use std::cmp::Ordering;
+use sysinfo::{Process, ProcessExt};
+use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
 pub fn get_process_vec<'a>(
     processes: &HashMap<i32, Process>,
@@ -47,7 +47,7 @@ fn pretty_cmd<'a>(name: &str, exe: &Path, cmd: &[String]) -> Vec<Span<'a>> {
     let red = Style::default().fg(Color::Red);
     // TODO: cleanup
     // TODO: configuable hide/show path
-    if cmd.len() <= 0 {
+    if cmd.is_empty() {
         // kernel thread or something
         return vec![Span::styled(format!("{}{}{}", "[", name, "]"), green)];
     }
@@ -56,17 +56,17 @@ fn pretty_cmd<'a>(name: &str, exe: &Path, cmd: &[String]) -> Vec<Span<'a>> {
         1 => String::from(""),
         _ => {
             let mut cmd_str = cmd[1..].join(" ");
-            cmd_str.insert_str(0, " ");
+            cmd_str.insert(0, ' ');
             cmd_str
         }
     };
     let cmd_span = Span::styled(cmd_args, green);
     // how is it even possible that we have to split these twice???
     let first_frag = cmd[0]
-        .splitn(1, " ")
+        .splitn(1, ' ')
         .next()
         .unwrap_or("unknown")
-        .split(" ")
+        .split(' ')
         .next();
 
     // check if exec_name != proc_name - if so, append proc_name to string

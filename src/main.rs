@@ -4,6 +4,7 @@ use sysinfo::{System, SystemExt};
 mod util;
 mod processes;
 
+use std::borrow::BorrowMut;
 use std::{time::Duration, vec};
 use std::{error::Error, io};
 use termion::{event::Key, raw::IntoRawMode, screen::AlternateScreen};

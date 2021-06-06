@@ -22,10 +22,25 @@ use util::StatefulTable;
 use crate::debug_permissions::DebugfsStatus;
 mod debug_permissions;
 
-pub struct AppState<'a>{
+pub struct AppState{
     should_sort: bool,
     can_use_debugfs: bool,
-    headers: Vec<& 'a str>,
+    headers: Vec<ColumnType>,
+}
+enum ColumnType {
+    PID,
+    NAME,
+    CPU,
+}
+
+impl ColumnType {
+    fn value(&self) -> &str {
+        match *self {
+            ColumnType::PID => "PID",
+            ColumnType::NAME => "NAME",
+            ColumnType::CPU => "CPU%",
+        }
+    }
 }
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("ktop")
@@ -81,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 false
             }
         };
-    let mut app_state = AppState{should_sort: true, can_use_debugfs, headers: vec!["pid", "name", "CPU%"] };
+    let mut app_state = AppState{should_sort: true, can_use_debugfs, headers: vec![ColumnType::PID, ColumnType::NAME, ColumnType::CPU] };
 
     // Terminal initialization
     let stdout = io::stdout().into_raw_mode()?;
@@ -111,7 +126,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let normal_style = Style::default().bg(Color::Blue);
             let header_cells = app_state.headers
                 .iter()
-                .map(|h| Cell::from(*h).style(Style::default().fg(Color::Red)));
+                .map(|h| Cell::from(h.value()).style(Style::default().fg(Color::Red)));
             let header = Row::new(header_cells)
                 .style(normal_style)
                 .height(1)

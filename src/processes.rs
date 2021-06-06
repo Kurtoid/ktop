@@ -21,14 +21,22 @@ pub fn get_process_vec<'a>(
     let mut vec = Vec::new();
     for (pid, process) in proc_vec.iter() {
         // println!("[{}] {} {:?}", pid, process.name(), process.cpu_usage());
-        vec.push(vec![
-            Spans::from(Span::styled(pid.to_string(), Style::default())),
-            Spans::from(pretty_cmd(process.name(), process.exe(), process.cmd())),
-            Spans::from(Span::styled(
-                format!("{:.2}", process.cpu_usage()),
-                Style::default(),
-            )),
-        ]);
+        let mut row = Vec::with_capacity(app_state.headers.len());
+        for colum in &app_state.headers {
+            row.push(match colum {
+                crate::ColumnType::PID => {
+                    Spans::from(Span::styled(pid.to_string(), Style::default()))
+                }
+                crate::ColumnType::NAME => {
+                    Spans::from(pretty_cmd(process.name(), process.exe(), process.cmd()))
+                }
+                crate::ColumnType::CPU => Spans::from(Span::styled(
+                    format!("{:.2}", process.cpu_usage()),
+                    Style::default(),
+                )),
+            });
+        }
+        vec.push(row);
     }
     vec
 }

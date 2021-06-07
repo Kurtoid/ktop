@@ -21,11 +21,12 @@ use crate::debug_permissions::DebugfsStatus;
 mod debug_permissions;
 
 pub struct AppState {
-    should_sort: bool,
     sorting_by: Option<ColumnType>,
+    sorting_column_index: usize,
     can_use_debugfs: bool,
     headers: Vec<ColumnType>,
 }
+#[derive(PartialEq, Clone, Copy)]
 enum ColumnType {
     PID,
     NAME,
@@ -98,10 +99,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         };
     let mut app_state = AppState {
-        should_sort: true,
         can_use_debugfs,
-        headers: vec![ColumnType::PID, ColumnType::NAME, ColumnType::RUNTIME, ColumnType::CPU],
-        sorting_by:  Some(ColumnType::CPU),
+        headers: vec![
+            ColumnType::PID,
+            ColumnType::NAME,
+            ColumnType::RUNTIME,
+            ColumnType::CPU,
+        ],
+        sorting_by: Some(ColumnType::CPU),
+        sorting_column_index: 3,
     };
 
     // Terminal initialization
@@ -112,7 +118,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     let mut sys = System::new_all();
-    let mut processes;
     sys.refresh_all();
     let config = Config {
         tick_rate: Duration::from_millis(app_config.delay * 1000),
@@ -130,10 +135,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let selected_style = Style::default().add_modifier(Modifier::REVERSED);
             let normal_style = Style::default().bg(Color::Blue);
-            let header_cells = app_state
-                .headers
-                .iter()
-                .map(|h| Cell::from(h.value()).style(Style::default().fg(Color::Red)));
+            let header_cells = app_state.headers.iter().map(|h| {
+                let color = if let Some(sorting_key) = &app_state.sorting_by {
+                    if h == sorting_key {
+                        Color::Green
+                    } else {
+                        Color::Red
+                    }
+                } else {
+                    Color::Red
+                };
+                Cell::from(h.value()).style(Style::default().fg(color))
+            });
             let header = Row::new(header_cells)
                 .style(normal_style)
                 .height(1)
@@ -171,24 +184,52 @@ fn main() -> Result<(), Box<dyn Error>> {
                     table.previous();
                 }
                 Key::Esc => {
-                    if app_state.should_sort {
-                        app_state.should_sort = false;
+                    if app_state.sorting_by.is_some() {
+                        app_state.sorting_by = None;
+                        refresh_all(&mut sys, &mut table, &app_state);
                     } else {
                         table.unselect();
                     }
+                }
+                Key::Right => {
+                    if app_state.sorting_column_index + 1 >= app_state.headers.len() {
+                        app_state.sorting_column_index = 0;
+                    } else {
+                        app_state.sorting_column_index += 1;
+                    }
+                    app_state.sorting_by = Some(app_state.headers[app_state.sorting_column_index]);
+                    refresh_all(&mut sys, &mut table, &app_state);
+                }
+                Key::Left => {
+                    if app_state.sorting_column_index  <= 0 {
+                        app_state.sorting_column_index = app_state.headers.len() - 1;
+                    } else {
+                        app_state.sorting_column_index -= 1;
+                    }
+                    app_state.sorting_by = Some(app_state.headers[app_state.sorting_column_index]);
+                    refresh_all(&mut sys, &mut table, &app_state);
                 }
                 _ => {}
             },
             Event::Tick => {
                 // only refresh what we use
                 // sys.refresh_all();
-                sys.refresh_cpu();
-                sys.refresh_processes();
-                processes = sys.get_processes();
-                table.items = processes::get_process_vec(processes, &app_state);
+                refresh_all(&mut sys, &mut table, &app_state);
             }
         }
     }
 
     Ok(())
+}
+
+fn refresh_all(sys: &mut System, mut table: &mut StatefulTable<'_>, app_state: &AppState) {
+    sys.refresh_cpu();
+    sys.refresh_processes();
+    let processes = sys.get_processes();
+    table.items = processes::get_process_vec(processes, &app_state);
+    if let Some(index) = table.state.selected() {
+        if index >= table.items.len() - 1 {
+            table.state.select(Some(table.items.len() - 1));
+        }
+    }
 }

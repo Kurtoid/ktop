@@ -1,19 +1,16 @@
 use crate::AppState;
 use crate::ColumnType;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::Path;
-use std::cmp::Ordering;
 use std::time::Duration;
 use sysinfo::{Process, ProcessExt};
 use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
 
-
-fn get_threads_from_process_map(
-    processes: &HashMap<i32, Process>,
-) -> Vec<&Process>{
+fn get_threads_from_process_map(processes: &HashMap<i32, Process>) -> Vec<&Process> {
     let mut all_threads = Vec::with_capacity(processes.len() * 2);
-    for (_, process) in processes{
+    for (_, process) in processes {
         all_threads.push(process);
         all_threads.append(&mut get_threads_from_process_map(&process.tasks));
     }
@@ -26,17 +23,26 @@ pub fn get_process_vec<'a>(
 ) -> Vec<Vec<Spans<'a>>> {
     let mut all_threads = get_threads_from_process_map(processes);
     // there has got to be a better way to do this
-    if app_state.should_sort && app_state.sorting_by.is_some() {
-        all_threads.sort_by(|a, b| {
-            b.cpu_usage()
-                .partial_cmp(&a.cpu_usage())
-                .unwrap_or(Ordering::Equal)
-        });
-        // proc_vec.sort_by(|a, b| {
-        //     a.1.pid()
-        //         .partial_cmp(&b.1.pid())
-        //         .unwrap_or(Ordering::Equal)
-        // });
+    if let Some(sorting_key) = &app_state.sorting_by {
+        match sorting_key {
+            ColumnType::PID => {
+                all_threads
+                    .sort_by(|a, b| a.pid().cmp(&b.pid()));
+            }
+            ColumnType::NAME => {
+                all_threads
+                    .sort_by(|a, b| a.name().to_string().to_lowercase().cmp(&b.name().to_string().to_lowercase()));
+
+            },
+            ColumnType::CPU => {
+                all_threads
+                    .sort_by(|a, b| b.cpu_usage().partial_cmp(&a.cpu_usage()).unwrap_or(Ordering::Equal));
+            },
+            ColumnType::RUNTIME => {
+                all_threads
+                    .sort_by(|a, b| b.total_runtime().cmp(&a.total_runtime()));
+            },
+        }
     }
     let mut vec = Vec::new();
     for process in all_threads.iter() {
@@ -49,6 +55,7 @@ pub fn get_process_vec<'a>(
                 }
                 crate::ColumnType::NAME => {
                     Spans::from(pretty_cmd(process.name(), process.exe(), process.cmd()))
+                    // Spans::from(Span::styled(process.name().to_string(), Style::default()))
                 }
                 crate::ColumnType::CPU => Spans::from(Span::styled(
                     format!("{:.2}", process.cpu_usage()),
@@ -59,8 +66,11 @@ pub fn get_process_vec<'a>(
                     let seconds = process_runtime % 60;
                     let minutes = (process_runtime / 60) % 60;
                     let hours = (process_runtime / 60) / 60;
-                    Spans::from(Span::styled(format!("{:02}:{:02}:{:02}", hours, minutes, seconds), Style::default()))
-                },
+                    Spans::from(Span::styled(
+                        format!("{:02}:{:02}:{:02}", hours, minutes, seconds),
+                        Style::default(),
+                    ))
+                }
             });
         }
         vec.push(row);
@@ -89,12 +99,10 @@ fn pretty_cmd<'a>(name: &str, exe: &Path, cmd: &[String]) -> Vec<Span<'a>> {
     };
     let cmd_span = Span::styled(cmd_args, green);
     // how is it even possible that we have to split these twice???
-    let first_frag = cmd[0]
-        .splitn(1, ' ')
-        .next();
-        // .unwrap_or("unknown")
-        // .split(' ')
-        // .next();
+    let first_frag = cmd[0].splitn(1, ' ').next();
+    // .unwrap_or("unknown")
+    // .split(' ')
+    // .next();
 
     // check if exec_name != proc_name - if so, append proc_name to string
     let file_name = exe.file_name();

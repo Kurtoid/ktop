@@ -338,8 +338,7 @@ checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 [[package]]
 name = "sysinfo"
 version = "0.18.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d404aefa651a24a7f2a1190fec9fb6380ba84ac511a6fefad79eb0e63d39a97d"
+source = "git+https://github.com/Kurtoid/sysinfo#e95adbc69812bd3693efa426480df6b2f15ea853"
 dependencies = [
  "cfg-if",
  "core-foundation-sys",

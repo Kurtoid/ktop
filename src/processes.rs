@@ -17,6 +17,11 @@ pub fn get_process_vec<'a>(
                 .partial_cmp(&a.1.cpu_usage())
                 .unwrap_or(Ordering::Equal)
         });
+        // proc_vec.sort_by(|a, b| {
+        //     a.1.pid()
+        //         .partial_cmp(&b.1.pid())
+        //         .unwrap_or(Ordering::Equal)
+        // });
     }
     let mut vec = Vec::new();
     for (pid, process) in proc_vec.iter() {
@@ -64,10 +69,10 @@ fn pretty_cmd<'a>(name: &str, exe: &Path, cmd: &[String]) -> Vec<Span<'a>> {
     // how is it even possible that we have to split these twice???
     let first_frag = cmd[0]
         .splitn(1, ' ')
-        .next()
-        .unwrap_or("unknown")
-        .split(' ')
         .next();
+        // .unwrap_or("unknown")
+        // .split(' ')
+        // .next();
 
     // check if exec_name != proc_name - if so, append proc_name to string
     let file_name = exe.file_name();

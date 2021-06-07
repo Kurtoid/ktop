@@ -146,7 +146,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .widths(&[
                     Constraint::Length(8),
                     Constraint::Percentage(60),
-                    Constraint::Max(10),
+                    Constraint::Max(5),
                 ]);
             f.render_stateful_widget(t, rects[0], &mut table.state);
         })?;

@@ -22,6 +22,7 @@ mod debug_permissions;
 
 pub struct AppState {
     should_sort: bool,
+    sorting_by: Option<ColumnType>,
     can_use_debugfs: bool,
     headers: Vec<ColumnType>,
 }
@@ -100,6 +101,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         should_sort: true,
         can_use_debugfs,
         headers: vec![ColumnType::PID, ColumnType::NAME, ColumnType::RUNTIME, ColumnType::CPU],
+        sorting_by:  Some(ColumnType::CPU),
     };
 
     // Terminal initialization

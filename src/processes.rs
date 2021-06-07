@@ -1,4 +1,5 @@
 use crate::AppState;
+use crate::ColumnType;
 use std::collections::HashMap;
 use std::path::Path;
 use std::cmp::Ordering;
@@ -6,16 +7,29 @@ use std::time::Duration;
 use sysinfo::{Process, ProcessExt};
 use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
+
+
+fn get_threads_from_process_map(
+    processes: &HashMap<i32, Process>,
+) -> Vec<&Process>{
+    let mut all_threads = Vec::with_capacity(processes.len() * 2);
+    for (_, process) in processes{
+        all_threads.push(process);
+        all_threads.append(&mut get_threads_from_process_map(&process.tasks));
+    }
+    all_threads
+}
+
 pub fn get_process_vec<'a>(
     processes: &HashMap<i32, Process>,
     app_state: &AppState,
 ) -> Vec<Vec<Spans<'a>>> {
-    // let mut hash_vec: Vec<_> = processes.iter().filter(|n| !n.1.cpu_usage().is_nan()).collect();
-    let mut proc_vec: Vec<_> = processes.iter().collect();
-    if app_state.should_sort {
-        proc_vec.sort_by(|a, b| {
-            b.1.cpu_usage()
-                .partial_cmp(&a.1.cpu_usage())
+    let mut all_threads = get_threads_from_process_map(processes);
+    // there has got to be a better way to do this
+    if app_state.should_sort && app_state.sorting_by.is_some() {
+        all_threads.sort_by(|a, b| {
+            b.cpu_usage()
+                .partial_cmp(&a.cpu_usage())
                 .unwrap_or(Ordering::Equal)
         });
         // proc_vec.sort_by(|a, b| {
@@ -25,13 +39,13 @@ pub fn get_process_vec<'a>(
         // });
     }
     let mut vec = Vec::new();
-    for (pid, process) in proc_vec.iter() {
+    for process in all_threads.iter() {
         // println!("[{}] {} {:?}", pid, process.name(), process.cpu_usage());
         let mut row = Vec::with_capacity(app_state.headers.len());
         for colum in &app_state.headers {
             row.push(match colum {
                 crate::ColumnType::PID => {
-                    Spans::from(Span::styled(pid.to_string(), Style::default()))
+                    Spans::from(Span::styled(process.pid().to_string(), Style::default()))
                 }
                 crate::ColumnType::NAME => {
                     Spans::from(pretty_cmd(process.name(), process.exe(), process.cmd()))

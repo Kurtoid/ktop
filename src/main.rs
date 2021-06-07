@@ -29,6 +29,7 @@ enum ColumnType {
     PID,
     NAME,
     CPU,
+    RUNTIME,
 }
 
 impl ColumnType {
@@ -36,6 +37,7 @@ impl ColumnType {
         match *self {
             ColumnType::PID => "PID",
             ColumnType::NAME => "NAME",
+            ColumnType::RUNTIME => "TIME",
             ColumnType::CPU => "CPU%",
         }
     }
@@ -97,7 +99,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut app_state = AppState {
         should_sort: true,
         can_use_debugfs,
-        headers: vec![ColumnType::PID, ColumnType::NAME, ColumnType::CPU],
+        headers: vec![ColumnType::PID, ColumnType::NAME, ColumnType::RUNTIME, ColumnType::CPU],
     };
 
     // Terminal initialization
@@ -144,8 +146,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .highlight_style(selected_style)
                 .highlight_symbol(">> ")
                 .widths(&[
+                    // TODO: make this part of appconfig headers
                     Constraint::Length(8),
                     Constraint::Percentage(60),
+                    Constraint::Length(9),
                     Constraint::Max(5),
                 ]);
             f.render_stateful_widget(t, rects[0], &mut table.state);

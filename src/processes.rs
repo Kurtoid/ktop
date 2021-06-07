@@ -2,6 +2,7 @@ use crate::AppState;
 use std::collections::HashMap;
 use std::path::Path;
 use std::cmp::Ordering;
+use std::time::Duration;
 use sysinfo::{Process, ProcessExt};
 use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
@@ -39,6 +40,13 @@ pub fn get_process_vec<'a>(
                     format!("{:.2}", process.cpu_usage()),
                     Style::default(),
                 )),
+                crate::ColumnType::RUNTIME => {
+                    let process_runtime = process.total_runtime();
+                    let seconds = process_runtime % 60;
+                    let minutes = (process_runtime / 60) % 60;
+                    let hours = (process_runtime / 60) / 60;
+                    Spans::from(Span::styled(format!("{:02}:{:02}:{:02}", hours, minutes, seconds), Style::default()))
+                },
             });
         }
         vec.push(row);

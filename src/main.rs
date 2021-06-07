@@ -184,12 +184,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                     table.previous();
                 }
                 Key::Esc => {
-                    if app_state.sorting_by.is_some() {
-                        app_state.sorting_by = None;
-                        refresh_all(&mut sys, &mut table, &app_state);
-                    } else {
+                    if table.state.selected().is_some()  {
                         table.unselect();
                     }
+                    else if app_state.sorting_by.is_some() {
+                        app_state.sorting_by = None;
+                        refresh_all(&mut sys, &mut table, &app_state);
+                    }                 
                 }
                 Key::Right => {
                     if app_state.sorting_column_index + 1 >= app_state.headers.len() {
@@ -201,7 +202,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     refresh_all(&mut sys, &mut table, &app_state);
                 }
                 Key::Left => {
-                    if app_state.sorting_column_index  <= 0 {
+                    if app_state.sorting_column_index  == 0 {
                         app_state.sorting_column_index = app_state.headers.len() - 1;
                     } else {
                         app_state.sorting_column_index -= 1;

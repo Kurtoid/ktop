@@ -132,12 +132,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     loop {
         terminal.draw(|f| {
             let rects = Layout::default()
-                .constraints([Constraint::Percentage(100)].as_ref())
+                .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
                 .margin(0)
                 .split(f.size());
 
             let selected_style = Style::default().add_modifier(Modifier::REVERSED);
             let normal_style = Style::default().bg(Color::Blue);
+
+            // main process table
             let header_cells = app_state.headers.iter().map(|h| {
                 let color = if let Some(sorting_key) = &app_state.sorting_by {
                     if h == sorting_key {
@@ -171,7 +173,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Constraint::Length(8),
                     Constraint::Min(20),
                 ]);
-            f.render_stateful_widget(t, rects[0], &mut table.state);
+            f.render_stateful_widget(t, rects[1], &mut table.state);
         })?;
         if app_config.run_once {
             break;

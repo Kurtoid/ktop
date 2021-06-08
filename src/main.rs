@@ -32,6 +32,7 @@ enum ColumnType {
     NAME,
     CPU,
     RUNTIME,
+    MEMORY,
 }
 
 impl ColumnType {
@@ -41,6 +42,7 @@ impl ColumnType {
             ColumnType::NAME => "NAME",
             ColumnType::RUNTIME => "TIME",
             ColumnType::CPU => "CPU%",
+            ColumnType::MEMORY => "MEMORY",
         }
     }
 }
@@ -102,12 +104,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         can_use_debugfs,
         headers: vec![
             ColumnType::PID,
-            ColumnType::NAME,
             ColumnType::RUNTIME,
             ColumnType::CPU,
+            ColumnType::MEMORY,
+            ColumnType::NAME,
         ],
         sorting_by: Some(ColumnType::CPU),
-        sorting_column_index: 3,
+        sorting_column_index: 2,
     };
 
     // Terminal initialization
@@ -163,9 +166,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .widths(&[
                     // TODO: make this part of appconfig headers
                     Constraint::Length(8),
-                    Constraint::Percentage(60),
                     Constraint::Length(9),
-                    Constraint::Max(5),
+                    Constraint::Length(7),
+                    Constraint::Length(8),
+                    Constraint::Min(20),
                 ]);
             f.render_stateful_widget(t, rects[0], &mut table.state);
         })?;

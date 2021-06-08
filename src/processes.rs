@@ -42,6 +42,10 @@ pub fn get_process_vec<'a>(
                 all_threads
                     .sort_by(|a, b| b.total_runtime().cmp(&a.total_runtime()));
             },
+            ColumnType::MEMORY => {
+                all_threads
+                    .sort_by(|a, b| b.memory().cmp(&a.memory()));
+            },
         }
     }
     let mut vec = Vec::new();
@@ -50,18 +54,18 @@ pub fn get_process_vec<'a>(
         let mut row = Vec::with_capacity(app_state.headers.len());
         for colum in &app_state.headers {
             row.push(match colum {
-                crate::ColumnType::PID => {
+                ColumnType::PID => {
                     Spans::from(Span::styled(process.pid().to_string(), Style::default()))
                 }
-                crate::ColumnType::NAME => {
+                ColumnType::NAME => {
                     Spans::from(pretty_cmd(process.name(), process.exe(), process.cmd()))
                     // Spans::from(Span::styled(process.name().to_string(), Style::default()))
                 }
-                crate::ColumnType::CPU => Spans::from(Span::styled(
+                ColumnType::CPU => Spans::from(Span::styled(
                     format!("{:.2}", process.cpu_usage()),
                     Style::default(),
                 )),
-                crate::ColumnType::RUNTIME => {
+                ColumnType::RUNTIME => {
                     let process_runtime = process.total_runtime();
                     let seconds = process_runtime % 60;
                     let minutes = (process_runtime / 60) % 60;
@@ -71,6 +75,11 @@ pub fn get_process_vec<'a>(
                         Style::default(),
                     ))
                 }
+                ColumnType::MEMORY => {
+                    let bytes = process.memory()*1000;
+                    // TODO: just do this yourself - no need for another library here!!!
+                    Spans::from(Span::styled(bytefmt::format(bytes).replace(" ", "").replace("B", ""), Style::default()))
+                },
             });
         }
         vec.push(row);

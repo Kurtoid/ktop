@@ -10,7 +10,7 @@ debug = true
 
 [dependencies]
 clap = "2.33.3"
-sysinfo = { git = "https://github.com/Kurtoid/sysinfo" }
+sysinfo = { git = "https://github.com/Kurtoid/sysinfo", default-features=false }
 ctrlc = "3.1.9"
 tui = "0.15"
 termion = "1.5"

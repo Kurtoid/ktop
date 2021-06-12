@@ -1,6 +1,6 @@
 use clap::{App, Arg};
 mod config;
-use sysinfo::{System, SystemExt};
+use sysinfo::{ProcessorExt, System, SystemExt};
 mod processes;
 mod util;
 
@@ -18,7 +18,9 @@ use util::event::{Config, Event, Events};
 use util::StatefulTable;
 
 use crate::debug_permissions::DebugfsStatus;
+use crate::meter_widget::MeterWidget;
 mod debug_permissions;
+mod meter_widget;
 
 pub struct AppState {
     sorting_by: Option<ColumnType>,
@@ -174,6 +176,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Constraint::Min(20),
                 ]);
             f.render_stateful_widget(t, rects[1], &mut table.state);
+            let meter = MeterWidget {
+                cpu_percent: sys.get_global_processor_info().get_cpu_usage()/100.0,
+                memory_percent: sys.get_used_memory() as f32 / sys.get_available_memory() as f32,
+            };
+            f.render_widget(meter, rects[0]);
         })?;
         if app_config.run_once {
             break;
@@ -190,13 +197,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                     table.previous();
                 }
                 Key::Esc => {
-                    if table.state.selected().is_some()  {
+                    if table.state.selected().is_some() {
                         table.unselect();
-                    }
-                    else if app_state.sorting_by.is_some() {
+                    } else if app_state.sorting_by.is_some() {
                         app_state.sorting_by = None;
                         refresh_all(&mut sys, &mut table, &app_state);
-                    }                 
+                    }
                 }
                 Key::Right => {
                     if app_state.sorting_column_index + 1 >= app_state.headers.len() {
@@ -208,7 +214,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     refresh_all(&mut sys, &mut table, &app_state);
                 }
                 Key::Left => {
-                    if app_state.sorting_column_index  == 0 {
+                    if app_state.sorting_column_index == 0 {
                         app_state.sorting_column_index = app_state.headers.len() - 1;
                     } else {
                         app_state.sorting_column_index -= 1;
@@ -232,6 +238,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn refresh_all(sys: &mut System, mut table: &mut StatefulTable<'_>, app_state: &AppState) {
     sys.refresh_cpu();
     sys.refresh_processes();
+    sys.refresh_memory();
     let processes = sys.get_processes();
     table.items = processes::get_process_vec(processes, &app_state);
     if let Some(index) = table.state.selected() {

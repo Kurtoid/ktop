@@ -14,22 +14,26 @@ use tui::{
     widgets::Widget,
 };
 
+use crate::zswap::ZswapStats;
+
 pub struct MeterWidget {
     pub cpu_percent: f32,
     pub cpu_system_percent: f32,
     pub memory_percent: f32,
     pub swap_percent: f32,
     pub total_swap: u64,
+    pub zswap_stats: Option<ZswapStats>,
 }
 
 impl Default for MeterWidget {
     fn default() -> MeterWidget {
         MeterWidget {
             cpu_percent: 0.0,
-            memory_percent: 0.0,
             cpu_system_percent: 0.0,
+            memory_percent: 0.0,
             swap_percent: 0.0,
             total_swap: 0,
+            zswap_stats: None,
         }
     }
 }
@@ -72,12 +76,22 @@ impl Widget for MeterWidget {
                 "SWAP".to_string(),
                 // this unit isn't correct - 1024 mb is displayed as 1.07 gb. for RAM, we want to use base 2, not base 10
                 // again, just make my own converter
-                bytefmt::format(self.total_swap * 1000)
+                bytefmt::format((self.total_swap as f32 * 1000f32 * 0.976562)as u64)
                     .replace(" ", "")
                     .replace("B", ""),
             ),
             area.width / 2,
         );
+        if self.zswap_stats.is_some() {
+            let stats = self.zswap_stats.unwrap();
+            let zswap_size = stats.pool_total_size;
+            buf.set_string(
+                area.left(),
+                area.top() + 2,
+                bytefmt::format(zswap_size).replace(' ', "").replace('B', ""),
+                Style::default(),
+            );
+        }
 
         /*
         let start = SystemTime::now();

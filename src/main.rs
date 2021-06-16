@@ -19,8 +19,10 @@ use util::StatefulTable;
 
 use crate::debug_permissions::DebugfsStatus;
 use crate::meter_widget::MeterWidget;
+use crate::zswap::read_zswap_stats;
 mod debug_permissions;
 mod meter_widget;
+mod zswap;
 
 pub struct AppState {
     sorting_by: Option<ColumnType>,
@@ -177,11 +179,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ]);
             f.render_stateful_widget(t, rects[1], &mut table.state);
             let meter = MeterWidget {
-                cpu_percent: sys.get_global_processor_info().get_cpu_usage()/100f32,
-                cpu_system_percent: sys.get_global_processor_info().get_system_percent()/100f32,
-                memory_percent: sys.get_used_memory() as f32 / sys.get_available_memory() as f32,
-                swap_percent: sys.get_used_swap() as f32/ sys.get_total_swap() as f32,
+                cpu_percent: sys.get_global_processor_info().get_cpu_usage() / 100f32,
+                cpu_system_percent: sys.get_global_processor_info().get_system_percent() / 100f32,
+                memory_percent: sys.get_used_memory() as f32 / sys.get_total_memory() as f32,
+                swap_percent: sys.get_used_swap() as f32 / sys.get_total_swap() as f32,
                 total_swap: sys.get_total_swap(),
+                zswap_stats: match app_config.can_use_debugfs {
+                    true => match read_zswap_stats() {
+                        Ok(r) => Some(r),
+                        Err(_) => None,
+                    },
+                    false => None,
+                },
             };
             f.render_widget(meter, rects[0]);
         })?;

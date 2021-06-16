@@ -5,10 +5,10 @@ pub enum DebugfsStatus {
     NoPermissions,
     MountedAndReadable,
 }
-
+pub const DEBUG_DIR: &str = "/sys/kernel/debug";
 // TODO: allow custom debugfs location
 pub fn can_read_debug() -> DebugfsStatus {
-    match File::open("/sys/kernel/debug") {
+    match File::open(DEBUG_DIR) {
         Err(e) => match e.kind() {
             ErrorKind::PermissionDenied => DebugfsStatus::NoPermissions,
             ErrorKind::NotFound => DebugfsStatus::NotMounted,
@@ -25,7 +25,7 @@ pub fn set_debug_permissions() -> bool {
     ::std::process::Command::new("sudo")
         .arg("/usr/bin/chmod")
         .arg("755")
-        .arg("/sys/kernel/debug")
+        .arg(DEBUG_DIR)
         .status()
         .unwrap()
         .success()

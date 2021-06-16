@@ -76,7 +76,7 @@ impl Widget for MeterWidget {
                 "SWAP".to_string(),
                 // this unit isn't correct - 1024 mb is displayed as 1.07 gb. for RAM, we want to use base 2, not base 10
                 // again, just make my own converter
-                bytefmt::format((self.total_swap as f32 * 1000f32 * 0.976562)as u64)
+                bytefmt::format((self.swap_percent * self.total_swap as f32 * 1000f32 * 0.976562)as u64)
                     .replace(" ", "")
                     .replace("B", ""),
             ),

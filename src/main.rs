@@ -181,6 +181,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 cpu_system_percent: sys.get_global_processor_info().get_system_percent()/100f32,
                 memory_percent: sys.get_used_memory() as f32 / sys.get_available_memory() as f32,
                 swap_percent: sys.get_used_swap() as f32/ sys.get_total_swap() as f32,
+                total_swap: sys.get_total_swap(),
             };
             f.render_widget(meter, rects[0]);
         })?;

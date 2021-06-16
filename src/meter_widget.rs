@@ -19,6 +19,7 @@ pub struct MeterWidget {
     pub cpu_system_percent: f32,
     pub memory_percent: f32,
     pub swap_percent: f32,
+    pub total_swap: u64,
 }
 
 impl Default for MeterWidget {
@@ -28,6 +29,7 @@ impl Default for MeterWidget {
             memory_percent: 0.0,
             cpu_system_percent: 0.0,
             swap_percent: 0.0,
+            total_swap: 0,
         }
     }
 }
@@ -64,10 +66,15 @@ impl Widget for MeterWidget {
         buf.set_spans(
             area.left() + area.width / 2,
             area.top() + 1,
-            &make_bar(
+            &make_bar_with_label(
                 self.swap_percent,
                 area.width as usize / 2,
                 "SWAP".to_string(),
+                // this unit isn't correct - 1024 mb is displayed as 1.07 gb. for RAM, we want to use base 2, not base 10
+                // again, just make my own converter
+                bytefmt::format(self.total_swap * 1000)
+                    .replace(" ", "")
+                    .replace("B", ""),
             ),
             area.width / 2,
         );

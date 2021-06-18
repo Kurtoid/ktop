@@ -78,7 +78,7 @@ pub fn get_process_vec<'a>(
                 ColumnType::MEMORY => {
                     let bytes = process.memory()*1000;
                     // TODO: just do this yourself - no need for another library here!!!
-                    Spans::from(Span::styled(bytefmt::format(bytes).replace(" ", "").replace("B", ""), Style::default()))
+                    Spans::from(Span::styled(bytefmt::format(bytes).replace("B", ""), Style::default()))
                 },
             });
         }

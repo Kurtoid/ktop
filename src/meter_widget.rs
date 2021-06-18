@@ -70,7 +70,7 @@ impl Widget for MeterWidget {
                 self.memory_percent,
                 area.width as usize / 2,
                 "MEM".to_string(),
-            bytefmt::format(self.memory_used*1000).replace(' ', "").replace('B', "")
+            bytefmt::format_base2(self.memory_used*1000).replace('B', "")
             ),
             area.width / 2,
         );
@@ -84,8 +84,7 @@ impl Widget for MeterWidget {
                 // this unit isn't correct - 1024 mb is displayed as 1.07 gb. for RAM, we want to use base 2, not base 10
                 // again, just make my own converter
                 // (self.total_swap).to_string()
-                bytefmt::format((self.total_swap * 1000) as u64)
-                    .replace(" ", "")
+                bytefmt::format_base2((self.total_swap * 1000) as u64)
                     .replace("B", ""),
             ),
             area.width / 2,
@@ -99,7 +98,6 @@ impl Widget for MeterWidget {
                 format!(
                     "Compressed Pool: {}",
                     bytefmt::format(zswap_size)
-                        .replace(' ', "")
                         .replace('B', "")
                 ),
                 Style::default(),

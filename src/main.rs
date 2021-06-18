@@ -181,7 +181,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Constraint::Length(8),
                     Constraint::Min(20),
                 ]);
-            f.render_stateful_widget(t, rects[1], &mut table.state);
             let meter = MeterWidget {
                 cpu_percent: sys.get_global_processor_info().get_cpu_usage() / 100f32,
                 cpu_system_percent: sys.get_global_processor_info().get_system_percent() / 100f32,
@@ -199,6 +198,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 swap_in: app_state.vminfo.swap_in,
                 swap_out: app_state.vminfo.swap_out,
             };
+            f.render_stateful_widget(t, rects[1], &mut table.state);
             f.render_widget(meter, rects[0]);
         })?;
         if app_config.run_once {

@@ -126,6 +126,7 @@ dependencies = [
  "clap",
  "ctrlc",
  "rand",
+ "regex",
  "sysinfo",
  "termion",
  "tui",

@@ -16,3 +16,4 @@ tui = "0.15"
 termion = "1.5"
 rand = "0.8"
 bytefmt = { git= "https://github.com/Kurtoid/bytefmt" }
+regex = "1.5"

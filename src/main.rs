@@ -1,6 +1,7 @@
 use clap::{App, Arg};
 mod config;
 use sysinfo::{ProcessorExt, System, SystemExt};
+use vmstat::vmstat_info;
 mod processes;
 mod util;
 
@@ -23,12 +24,14 @@ use crate::zswap::read_zswap_stats;
 mod debug_permissions;
 mod meter_widget;
 mod zswap;
+mod vmstat;
 
 pub struct AppState {
     sorting_by: Option<ColumnType>,
     sorting_column_index: usize,
     can_use_debugfs: bool,
     headers: Vec<ColumnType>,
+    vminfo: vmstat_info
 }
 #[derive(PartialEq, Clone, Copy)]
 enum ColumnType {
@@ -115,6 +118,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         ],
         sorting_by: Some(ColumnType::CPU),
         sorting_column_index: 2,
+        vminfo: vmstat_info::new(),
     };
 
     // Terminal initialization
@@ -182,15 +186,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 cpu_percent: sys.get_global_processor_info().get_cpu_usage() / 100f32,
                 cpu_system_percent: sys.get_global_processor_info().get_system_percent() / 100f32,
                 memory_percent: sys.get_used_memory() as f32 / sys.get_total_memory() as f32,
+                memory_used: sys.get_used_memory(),
                 swap_percent: sys.get_used_swap() as f32 / sys.get_total_swap() as f32,
-                total_swap: sys.get_total_swap(),
-                zswap_stats: match app_config.can_use_debugfs {
+                total_swap: sys.get_used_swap(),
+                zswap_stats: match app_state.can_use_debugfs {
                     true => match read_zswap_stats() {
                         Ok(r) => Some(r),
                         Err(_) => None,
                     },
                     false => None,
                 },
+                swap_in: app_state.vminfo.swap_in,
+                swap_out: app_state.vminfo.swap_out,
             };
             f.render_widget(meter, rects[0]);
         })?;
@@ -213,7 +220,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         table.unselect();
                     } else if app_state.sorting_by.is_some() {
                         app_state.sorting_by = None;
-                        refresh_all(&mut sys, &mut table, &app_state);
+                        refresh_all(&mut sys, &mut table, &mut app_state);
                     }
                 }
                 Key::Right => {
@@ -223,7 +230,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         app_state.sorting_column_index += 1;
                     }
                     app_state.sorting_by = Some(app_state.headers[app_state.sorting_column_index]);
-                    refresh_all(&mut sys, &mut table, &app_state);
+                    refresh_all(&mut sys, &mut table, &mut app_state);
                 }
                 Key::Left => {
                     if app_state.sorting_column_index == 0 {
@@ -232,14 +239,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                         app_state.sorting_column_index -= 1;
                     }
                     app_state.sorting_by = Some(app_state.headers[app_state.sorting_column_index]);
-                    refresh_all(&mut sys, &mut table, &app_state);
+                    refresh_all(&mut sys, &mut table, &mut app_state);
                 }
                 _ => {}
             },
             Event::Tick => {
                 // only refresh what we use
                 // sys.refresh_all();
-                refresh_all(&mut sys, &mut table, &app_state);
+                refresh_all(&mut sys, &mut table, &mut app_state);
             }
         }
     }
@@ -247,10 +254,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn refresh_all(sys: &mut System, mut table: &mut StatefulTable<'_>, app_state: &AppState) {
+fn refresh_all(sys: &mut System, mut table: &mut StatefulTable<'_>, app_state: &mut AppState) {
     sys.refresh_cpu();
     sys.refresh_processes();
     sys.refresh_memory();
+    app_state.vminfo.update();
     let processes = sys.get_processes();
     table.items = processes::get_process_vec(processes, &app_state);
     if let Some(index) = table.state.selected() {

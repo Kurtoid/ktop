@@ -20,9 +20,12 @@ pub struct MeterWidget {
     pub cpu_percent: f32,
     pub cpu_system_percent: f32,
     pub memory_percent: f32,
+    pub memory_used: u64,
     pub swap_percent: f32,
     pub total_swap: u64,
     pub zswap_stats: Option<ZswapStats>,
+    pub(crate) swap_out: usize,
+    pub(crate) swap_in: usize,
 }
 
 impl Default for MeterWidget {
@@ -34,6 +37,9 @@ impl Default for MeterWidget {
             swap_percent: 0.0,
             total_swap: 0,
             zswap_stats: None,
+            memory_used: 0,
+            swap_out: 0,
+            swap_in: 0,
         }
     }
 }
@@ -60,10 +66,11 @@ impl Widget for MeterWidget {
         buf.set_spans(
             area.left(),
             area.top() + 1,
-            &make_bar(
+            &make_bar_with_label(
                 self.memory_percent,
                 area.width as usize / 2,
                 "MEM".to_string(),
+            bytefmt::format(self.memory_used*1000).replace(' ', "").replace('B', "")
             ),
             area.width / 2,
         );
@@ -76,7 +83,8 @@ impl Widget for MeterWidget {
                 "SWAP".to_string(),
                 // this unit isn't correct - 1024 mb is displayed as 1.07 gb. for RAM, we want to use base 2, not base 10
                 // again, just make my own converter
-                bytefmt::format((self.swap_percent * self.total_swap as f32 * 1000f32 * 0.976562)as u64)
+                // (self.total_swap).to_string()
+                bytefmt::format((self.total_swap * 1000) as u64)
                     .replace(" ", "")
                     .replace("B", ""),
             ),
@@ -88,10 +96,24 @@ impl Widget for MeterWidget {
             buf.set_string(
                 area.left(),
                 area.top() + 2,
-                bytefmt::format(zswap_size).replace(' ', "").replace('B', ""),
+                format!(
+                    "Compressed Pool: {}",
+                    bytefmt::format(zswap_size)
+                        .replace(' ', "")
+                        .replace('B', "")
+                ),
                 Style::default(),
             );
         }
+            buf.set_string(
+                area.left(),
+                area.top() + 3,
+                format!(
+                    "Swap in: {} out: {}",
+                    self.swap_in, self.swap_out
+                ),
+                Style::default(),
+            );
 
         /*
         let start = SystemTime::now();

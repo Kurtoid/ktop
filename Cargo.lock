@@ -266,8 +266,8 @@ checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
 name = "sysinfo"
-version = "0.18.2"
-source = "git+https://github.com/Kurtoid/sysinfo#e778a9bf462653bf25cbc06ed58d900e1da592b2"
+version = "0.18.3"
+source = "git+https://github.com/Kurtoid/sysinfo#3618331757c380ca3255449781f89970a9db67cb"
 dependencies = [
  "cfg-if",
  "core-foundation-sys",
@@ -275,6 +275,7 @@ dependencies = [
  "libc",
  "ntapi",
  "once_cell",
+ "regex",
  "winapi",
 ]
 

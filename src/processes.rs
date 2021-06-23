@@ -54,6 +54,9 @@ pub fn get_process_vec<'a>(
             ColumnType::MEMORY => {
                 all_threads.sort_by(|a, b| b.memory().cmp(&a.memory()));
             }
+            ColumnType::MEMORY_SWAP => {
+                all_threads.sort_by(|a, b| b.total_swap().cmp(&a.total_swap()));
+            }
         }
     }
     let mut vec = Vec::new();
@@ -85,6 +88,14 @@ pub fn get_process_vec<'a>(
                 }
                 ColumnType::MEMORY => {
                     let bytes = process.memory() * 1000;
+                    // TODO: just do this yourself - no need for another library here!!!
+                    Spans::from(Span::styled(
+                        bytefmt::format(bytes).replace("B", ""),
+                        Style::default(),
+                    ))
+                }
+                ColumnType::MEMORY_SWAP => {
+                    let bytes = process.total_swap() * 1000;
                     // TODO: just do this yourself - no need for another library here!!!
                     Spans::from(Span::styled(
                         bytefmt::format(bytes).replace("B", ""),

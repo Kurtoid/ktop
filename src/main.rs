@@ -41,6 +41,7 @@ enum ColumnType {
     CPU,
     RUNTIME,
     MEMORY,
+    MEMORY_SWAP,
 }
 
 impl ColumnType {
@@ -51,6 +52,7 @@ impl ColumnType {
             ColumnType::RUNTIME => "TIME",
             ColumnType::CPU => "CPU%",
             ColumnType::MEMORY => "MEMORY",
+            ColumnType::MEMORY_SWAP => "SWAP",
         }
     }
 }
@@ -126,6 +128,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             ColumnType::RUNTIME,
             ColumnType::CPU,
             ColumnType::MEMORY,
+            ColumnType::MEMORY_SWAP,
             ColumnType::NAME,
         ],
         sorting_by: Some(ColumnType::CPU),
@@ -181,9 +184,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let cells = item.iter().map(|this_span| Cell::from(this_span.clone()));
                 Row::new(cells).height(1).bottom_margin(0)
             });
-            let title = match app_state.show_threads{
+            let title = match app_state.show_threads {
                 true => "Processes and threads",
-                false => "Processes"
+                false => "Processes",
             };
             let t = Table::new(rows)
                 .header(header)
@@ -195,6 +198,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Constraint::Length(8),
                     Constraint::Length(9),
                     Constraint::Length(7),
+                    Constraint::Length(8),
                     Constraint::Length(8),
                     Constraint::Min(20),
                 ]);

@@ -8,11 +8,16 @@ use sysinfo::{Process, ProcessExt};
 use tui::style::{Color, Style};
 use tui::text::{Span, Spans};
 
-fn get_threads_from_process_map(processes: &HashMap<i32, Process>) -> Vec<&Process> {
+fn get_threads_from_process_map(
+    processes: &HashMap<i32, Process>,
+    use_threads: bool,
+) -> Vec<&Process> {
     let mut all_threads = Vec::with_capacity(processes.len() * 2);
     for (_, process) in processes {
         all_threads.push(process);
-        all_threads.append(&mut get_threads_from_process_map(&process.tasks));
+        if use_threads {
+            all_threads.append(&mut get_threads_from_process_map(&process.tasks, true));
+        }
     }
     all_threads
 }
@@ -21,31 +26,34 @@ pub fn get_process_vec<'a>(
     processes: &HashMap<i32, Process>,
     app_state: &AppState,
 ) -> Vec<Vec<Spans<'a>>> {
-    let mut all_threads = get_threads_from_process_map(processes);
+    let mut all_threads = get_threads_from_process_map(processes, app_state.show_threads);
     // there has got to be a better way to do this
     if let Some(sorting_key) = &app_state.sorting_by {
         match sorting_key {
             ColumnType::PID => {
-                all_threads
-                    .sort_by(|a, b| a.pid().cmp(&b.pid()));
+                all_threads.sort_by(|a, b| a.pid().cmp(&b.pid()));
             }
             ColumnType::NAME => {
-                all_threads
-                    .sort_by(|a, b| a.name().to_string().to_lowercase().cmp(&b.name().to_string().to_lowercase()));
-
-            },
+                all_threads.sort_by(|a, b| {
+                    a.name()
+                        .to_string()
+                        .to_lowercase()
+                        .cmp(&b.name().to_string().to_lowercase())
+                });
+            }
             ColumnType::CPU => {
-                all_threads
-                    .sort_by(|a, b| b.cpu_usage().partial_cmp(&a.cpu_usage()).unwrap_or(Ordering::Equal));
-            },
+                all_threads.sort_by(|a, b| {
+                    b.cpu_usage()
+                        .partial_cmp(&a.cpu_usage())
+                        .unwrap_or(Ordering::Equal)
+                });
+            }
             ColumnType::RUNTIME => {
-                all_threads
-                    .sort_by(|a, b| b.total_runtime().cmp(&a.total_runtime()));
-            },
+                all_threads.sort_by(|a, b| b.total_runtime().cmp(&a.total_runtime()));
+            }
             ColumnType::MEMORY => {
-                all_threads
-                    .sort_by(|a, b| b.memory().cmp(&a.memory()));
-            },
+                all_threads.sort_by(|a, b| b.memory().cmp(&a.memory()));
+            }
         }
     }
     let mut vec = Vec::new();
@@ -76,10 +84,13 @@ pub fn get_process_vec<'a>(
                     ))
                 }
                 ColumnType::MEMORY => {
-                    let bytes = process.memory()*1000;
+                    let bytes = process.memory() * 1000;
                     // TODO: just do this yourself - no need for another library here!!!
-                    Spans::from(Span::styled(bytefmt::format(bytes).replace("B", ""), Style::default()))
-                },
+                    Spans::from(Span::styled(
+                        bytefmt::format(bytes).replace("B", ""),
+                        Style::default(),
+                    ))
+                }
             });
         }
         vec.push(row);

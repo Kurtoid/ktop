@@ -23,15 +23,16 @@ use crate::meter_widget::MeterWidget;
 use crate::zswap::read_zswap_stats;
 mod debug_permissions;
 mod meter_widget;
-mod zswap;
 mod vmstat;
+mod zswap;
 
 pub struct AppState {
     sorting_by: Option<ColumnType>,
     sorting_column_index: usize,
     can_use_debugfs: bool,
     headers: Vec<ColumnType>,
-    vminfo: vmstat_info
+    vminfo: vmstat_info,
+    show_threads: bool,
 }
 #[derive(PartialEq, Clone, Copy)]
 enum ColumnType {
@@ -84,6 +85,17 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .long("once")
                 .takes_value(false)
                 .help("run once and exit"),
+        ).arg(
+            Arg::with_name("show threads")
+                .short("t")
+                .long("show-threads")
+                .takes_value(false) // TODO: take values here
+                .help("show threads. Enabled by default. overrides hide-threads")
+        ).arg(
+            Arg::with_name("hide threads")
+                .long("hide-threads") // i'd rather make 'show-threads' a boolean, but this seems to follow conventions
+                .takes_value(false)
+                .help("hide threads. implies accumulate-parent - thread values will be added to parent process")
         )
         .get_matches();
 
@@ -119,6 +131,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         sorting_by: Some(ColumnType::CPU),
         sorting_column_index: 2,
         vminfo: vmstat_info::new(),
+        show_threads: app_config.show_threads,
     };
 
     // Terminal initialization
@@ -168,9 +181,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let cells = item.iter().map(|this_span| Cell::from(this_span.clone()));
                 Row::new(cells).height(1).bottom_margin(0)
             });
+            let title = match app_state.show_threads{
+                true => "Processes and threads",
+                false => "Processes"
+            };
             let t = Table::new(rows)
                 .header(header)
-                .block(Block::default().borders(Borders::ALL).title("Processes"))
+                .block(Block::default().borders(Borders::ALL).title(title))
                 .highlight_style(selected_style)
                 .highlight_symbol(">> ")
                 .widths(&[
@@ -239,6 +256,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                         app_state.sorting_column_index -= 1;
                     }
                     app_state.sorting_by = Some(app_state.headers[app_state.sorting_column_index]);
+                    refresh_all(&mut sys, &mut table, &mut app_state);
+                }
+                Key::Char('t') => {
+                    // show/hide threads
+                    app_state.show_threads = !app_state.show_threads;
                     refresh_all(&mut sys, &mut table, &mut app_state);
                 }
                 _ => {}

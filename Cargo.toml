@@ -1,6 +1,6 @@
 [package]
 name = "ktop"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Kurt Wilson <kurt4wilson@gmail.com>"]
 edition = "2018"
 

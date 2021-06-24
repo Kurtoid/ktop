@@ -88,9 +88,9 @@ impl Widget for MeterWidget {
                     Some(stats) => {
                         format!(
                             "Disk: {} Compr: {} Raw: {}",
-                            bytefmt::format_base2(stats.written_back_pages * 1000),
-                            bytefmt::format_base2(stats.pool_total_size * 1000),
-                            bytefmt::format_base2(self.memory_used * 1000)
+                            bytefmt::format_base2(stats.written_back_pages * 1000).replace('B', ""),
+                            bytefmt::format_base2(stats.pool_total_size).replace('B', ""),
+                            bytefmt::format_base2(self.memory_used * 1000).replace('B', "")
                         )
                     }
                     None => bytefmt::format_base2((self.total_swap * 1000) as u64).replace("B", ""),

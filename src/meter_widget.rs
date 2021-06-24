@@ -70,7 +70,7 @@ impl Widget for MeterWidget {
                 self.memory_percent,
                 area.width as usize / 2,
                 "MEM".to_string(),
-            bytefmt::format_base2(self.memory_used*1000).replace('B', "")
+                bytefmt::format_base2(self.memory_used * 1000).replace('B', ""),
             ),
             area.width / 2,
         );
@@ -84,34 +84,26 @@ impl Widget for MeterWidget {
                 // this unit isn't correct - 1024 mb is displayed as 1.07 gb. for RAM, we want to use base 2, not base 10
                 // again, just make my own converter
                 // (self.total_swap).to_string()
-                bytefmt::format_base2((self.total_swap * 1000) as u64)
-                    .replace("B", ""),
+                match self.zswap_stats {
+                    Some(stats) => {
+                        format!(
+                            "Disk: {} Compr: {} Raw: {}",
+                            bytefmt::format_base2(stats.written_back_pages * 1000),
+                            bytefmt::format_base2(stats.pool_total_size * 1000),
+                            bytefmt::format_base2(self.memory_used * 1000)
+                        )
+                    }
+                    None => bytefmt::format_base2((self.total_swap * 1000) as u64).replace("B", ""),
+                },
             ),
             area.width / 2,
         );
-        if self.zswap_stats.is_some() {
-            let stats = self.zswap_stats.unwrap();
-            let zswap_size = stats.pool_total_size;
-            buf.set_string(
-                area.left(),
-                area.top() + 2,
-                format!(
-                    "Compressed Pool: {}",
-                    bytefmt::format(zswap_size)
-                        .replace('B', "")
-                ),
-                Style::default(),
-            );
-        }
-            buf.set_string(
-                area.left(),
-                area.top() + 3,
-                format!(
-                    "Swap in: {} out: {}",
-                    self.swap_in, self.swap_out
-                ),
-                Style::default(),
-            );
+        buf.set_string(
+            area.left(),
+            area.top() + 3,
+            format!("Swap in: {} out: {}", self.swap_in, self.swap_out),
+            Style::default(),
+        );
 
         /*
         let start = SystemTime::now();

@@ -208,7 +208,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 memory_percent: sys.get_used_memory() as f32 / sys.get_total_memory() as f32,
                 memory_used: sys.get_used_memory(),
                 swap_percent: sys.get_used_swap() as f32 / sys.get_total_swap() as f32,
-                total_swap: sys.get_used_swap(),
+                total_swap: sys.get_total_swap(),
                 zswap_stats: match app_state.can_use_debugfs {
                     true => match read_zswap_stats() {
                         Ok(r) => Some(r),

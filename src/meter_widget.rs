@@ -1,10 +1,11 @@
-use core::num;
+use core::{num, str};
 use std::{
     time::{SystemTime, UNIX_EPOCH},
     usize,
 };
 
 use bytefmt::format;
+use termion::color;
 use tui::{
     buffer::Buffer,
     layout::Rect,
@@ -128,6 +129,46 @@ impl Widget for MeterWidget {
 fn make_bar<'a>(percentage: f32, width: usize, label: String) -> Spans<'a> {
     make_bar_with_label(percentage, width, label, String::from(""))
 }
+
+struct BarColorization{
+    percent: f32,
+    color:  Color,
+}
+
+fn colorize_bar(line: String, colors: &Vec<BarColorization>){
+
+}
+
+fn make_multicolored_bar<'a>(colors: &Vec<BarColorization>, width: usize, label: String, inner_label_prefix: String) -> Spans<'a>{
+    let bar_width = width - LABEL_WIDTH - 2 - 2;
+    let percentage = {
+        let mut sum = 0f32;
+        for bar in colors{
+            sum += bar.percent;
+        }
+        sum
+    };
+
+    let percent_label = format!(
+        "{:width$}{:3.1}%",
+        inner_label_prefix,
+        percentage * 100f32,
+        width = inner_label_prefix.len() + 1
+    );
+    let num_filled_blocks = f32::round(bar_width as f32 * percentage) as usize;
+    // assemble string
+    let line_str = format!("{}{}{}{}", "[" + tui::symbols::line::VERTICAL.repeat(num_filled_blocks), " ".repeat(bar_width-(percent_label.len())), percent_label, "]");
+    
+    let mut spans = Vec::new();
+    let string_pos = 0;
+    for color in colors{
+        // TODO
+    }
+    spans.append(Span::styled(line_str, Style::default()));
+    let color_spans: Spans<'a> = Spans::from(spans);
+    color_spans
+}
+
 const LABEL_WIDTH: usize = 5;
 fn make_bar_with_label<'a>(
     percentage: f32,
@@ -158,7 +199,7 @@ fn make_bar_with_label<'a>(
                 bar_width - percent_label.len()
             ),
             // TODO: the blue is just for debugging
-            Style::default().fg(Color::Red),
+            Style::default().fg(Color::Red) //.bg(Color::Blue),
         ),
     ];
     bar_spans.push(Span::styled(percent_label, Style::default()));
